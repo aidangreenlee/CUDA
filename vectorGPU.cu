@@ -2,18 +2,12 @@
 #include <math.h>
 
 __global__
-void add(int n, float *x, float *y, float *z)
-{
-  int index = threadIdx.x;
-  int stride = blockDim.x;
+void add(int n, float *x, float *y, float *z){
+  int index = threadIdx.x + blockIdx.x * blockDim.x;
+  int stride = blockDim.x * gridDim.x;
   for (int i = index; i < n; i += stride)
       z[i] = x[i] + y[i];
 }
-// void dot(int n, float *x, float *y, float *c){
-//     for(int i = 0; i < n; i++){
-//         *c += x[i] * y[i];
-//     }
-// }
 
 int main(void){
     int N = 1<<20;
@@ -30,9 +24,8 @@ int main(void){
     }
 
     int blockSize = 256;
-        int numBlocks = (N + blockSize - 1) / blockSize;
-        add<<<numBlocks, blockSize>>>(N, x, y, z);
-    // dot(N, x, y, c);
+    int numBlocks = (N + blockSize - 1) / blockSize;
+    add<<<numBlocks, blockSize>>>(N, x, y, z);
 
     cudaDeviceSynchronize();
 

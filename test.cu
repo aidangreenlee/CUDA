@@ -1,50 +1,78 @@
+#include "cuda_runtime.h"
+#include "device_launch_parameters.h"
+#include "device_atomic_functions.h"
 #include <stdio.h>
-#define N 200
+#include <stdlib.h>
+#define N 2048
 #define THREADS_PER_BLOCK 512
 
-__global__ void dot(int *a, int *b, int *c) {
+__global__ void dot(int *a, int *b, int *c)
+{
     __shared__ int temp[THREADS_PER_BLOCK];
     int index = threadIdx.x + blockIdx.x * blockDim.x;
     temp[threadIdx.x] = a[index] * b[index];
 
     __syncthreads();
-    
-    if( 0 == threadIdx.x) {
+
+    if (threadIdx.x == 0)
+    {
         int sum = 0;
-        for(int i = 0; i < THREADS_PER_BLOCK; i++)
+        for (int i = 0; i < THREADS_PER_BLOCK; i++)
+        {
             sum += temp[i];
+        }
         atomicAdd(c, sum);
     }
 }
 
-int main(void){
+int main()
+{
     int *a, *b, *c;
     int *dev_a, *dev_b, *dev_c;
     int size = N * sizeof(int);
 
-    cudaMalloc((void**)&dev_a, size);
-    cudaMalloc((void**)&dev_b, size);
-    cudaMalloc((void**)&dev_c, sizeof(int));
+   //allocate space for the variables on the device
+    cudaMalloc((void **)&dev_a, size);
+    cudaMalloc((void **)&dev_b, size);
+    cudaMalloc((void **)&dev_c, sizeof(int));
 
-    a = (int *)malloc(size);
-    b = (int *)malloc(size);
-    c = (int *)calloc(sizeof(int),0);
+   //allocate space for the variables on the host
+   a = (int *)malloc(size);
+   b = (int *)malloc(size);
+   c = (int *)malloc(sizeof(int));
 
-    for(int i = 0; i < N; i++){
-        a[i] = 1;
-        b[i] = 1;
-    }
+   //this is our ground truth
+   int sumTest = 0;
+   //generate numbers
+   for (int i = 0; i < N; i++)
+   {
+       a[i] = 1;
+       b[i] = 1;
+       sumTest += a[i] * b[i];
+   }
 
-    cudaMemcpy(dev_a, a, size, cudaMemcpyHostToDevice);
-    cudaMemcpy(dev_b, b, size, cudaMemcpyHostToDevice);
+   *c = 0;
 
-    dot<<< N/THREADS_PER_BLOCK, THREADS_PER_BLOCK >>>(dev_a, dev_b, dev_c);
+   cudaMemcpy(dev_a, a, size, cudaMemcpyHostToDevice);
+   cudaMemcpy(dev_b, b, size, cudaMemcpyHostToDevice);
+   cudaMemcpy(dev_c, c, sizeof(int), cudaMemcpyHostToDevice);
 
-    cudaMemcpy(c, dev_c, sizeof(int), cudaMemcpyDeviceToHost);
+   dot<<< N / THREADS_PER_BLOCK, THREADS_PER_BLOCK >> >(dev_a, dev_b,    dev_c);
 
-    printf("C: %d\n",*c);
+   cudaMemcpy(c, dev_c, sizeof(int), cudaMemcpyDeviceToHost);
 
-    free(a); free(b); free(c);
-    cudaFree(dev_a); cudaFree(dev_b); cudaFree(dev_c);
-    return 0;
-}
+   printf("%d ", *c);
+   printf("%d ", sumTest);
+
+   free(a);
+   free(b);
+   free(c);
+
+   cudaFree(a);
+   cudaFree(b);
+   cudaFree(c);
+
+
+   return 0;
+
+ }
