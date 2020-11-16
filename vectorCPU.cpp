@@ -29,7 +29,7 @@ int main(void){
 
     float maxError = 0;
     for(int i = 0; i < N; i++){
-        maxError = fmax(maxError, fabs(z[i]) - 3);
+        maxError = fmax(maxError, fabs(z[i]) - 2);
     }
     std::cout << "Error: " << maxError << std::endl;
     std::cout << "Time taken by program is : " << time_taken; 
@@ -37,6 +37,7 @@ int main(void){
 
     delete [] x;
     delete [] y;
+    delete [] z;
 
     return 0;
 }
