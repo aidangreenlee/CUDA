@@ -6,7 +6,7 @@ This code was benchmarked on the XSEDE supercomputer for all final results.
 
 To compile, simply run `nvcc <filename>`
 
-Resources used for this project:\
+### Resources used for this project:
 [CUDA By Example: an introduction to general-purpose GPU programming](https://developer.download.nvidia.com/books/cuda-by-example/cuda-by-example-sample.pdf), by Jason Sanders and Edward Kandrot
 
 [An Even Easier Introduction to CUDA](https://developer.nvidia.com/blog/even-easier-introduction-cuda/) by Mark Harris
