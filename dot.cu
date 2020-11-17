@@ -53,8 +53,11 @@ int main(){
     std::cout << "dot product: " << *c << std::endl;
     std::cout << "test: " << test << std::endl;
 
-    cudaFree(a);
-    cudaFree(b);
-    cudaFree(c);
+    cudaFree(dev_a);
+    cudaFree(dev_b);
+    cudaFree(dev_c);
+    free(a);
+    free(b);
+    free(c);
     return 0;
 }

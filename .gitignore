@@ -2,3 +2,4 @@ nvvp_workspace/
 .vscode/
 a.out
 *.bak
+test.cu

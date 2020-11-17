@@ -1,78 +1,53 @@
-#include "cuda_runtime.h"
-#include "device_launch_parameters.h"
-#include "device_atomic_functions.h"
-#include <stdio.h>
-#include <stdlib.h>
-#define N 2048
-#define THREADS_PER_BLOCK 512
+#define N 512
+#define BLOCK_DIM 512
+#include <iostream>
 
-__global__ void dot(int *a, int *b, int *c)
-{
-    __shared__ int temp[THREADS_PER_BLOCK];
-    int index = threadIdx.x + blockIdx.x * blockDim.x;
-    temp[threadIdx.x] = a[index] * b[index];
+__global__ void matrixAdd (int *a, int *b, int *c);
 
-    __syncthreads();
-
-    if (threadIdx.x == 0)
-    {
-        int sum = 0;
-        for (int i = 0; i < THREADS_PER_BLOCK; i++)
-        {
-            sum += temp[i];
+int main() {
+    int a[N][N], b[N][N], c[N][N];
+    int *dev_a, *dev_b, *dev_c;
+    int size = N * N * sizeof(int);
+    
+    for(int i = 0; i < N; i++){
+        for(int j = 0; j < N; j++){
+            a[i][j] = 1;
+            b[i][j] = 1;
         }
-        atomicAdd(c, sum);
     }
+
+    cudaMalloc((void**)&dev_a, size);
+    cudaMalloc((void**)&dev_b, size);
+    cudaMalloc((void**)&dev_c, size);
+
+    cudaMemcpy(dev_a, a, size, cudaMemcpyHostToDevice);
+    cudaMemcpy(dev_b, b, size, cudaMemcpyHostToDevice);
+    
+    dim3 dimBlock(BLOCK_DIM, BLOCK_DIM);
+    dim3 dimGrid((int)ceil(N/dimBlock.x),(int)ceil(N/dimBlock.y));
+    
+    matrixAdd<<<dimGrid,dimBlock>>>(dev_a,dev_b,dev_c);
+    cudaMemcpy(c, dev_c, size, cudaMemcpyDeviceToHost);
+
+    float maxError = 0;
+    for(int i = 0; i < N; i++){
+        for(int j = 0; j < N; j++){
+            maxError = fmax(maxError, fabs(c[i][j] - 2));
+        }
+    }
+    std::cout << "Error: " << maxError << std::endl;
+    
+    cudaFree(a);
+    cudaFree(b);
+    cudaFree(c);
 }
 
-int main()
-{
-    int *a, *b, *c;
-    int *dev_a, *dev_b, *dev_c;
-    int size = N * sizeof(int);
-
-   //allocate space for the variables on the device
-    cudaMalloc((void **)&dev_a, size);
-    cudaMalloc((void **)&dev_b, size);
-    cudaMalloc((void **)&dev_c, sizeof(int));
-
-   //allocate space for the variables on the host
-   a = (int *)malloc(size);
-   b = (int *)malloc(size);
-   c = (int *)malloc(sizeof(int));
-
-   //this is our ground truth
-   int sumTest = 0;
-   //generate numbers
-   for (int i = 0; i < N; i++)
-   {
-       a[i] = 1;
-       b[i] = 1;
-       sumTest += a[i] * b[i];
-   }
-
-   *c = 0;
-
-   cudaMemcpy(dev_a, a, size, cudaMemcpyHostToDevice);
-   cudaMemcpy(dev_b, b, size, cudaMemcpyHostToDevice);
-   cudaMemcpy(dev_c, c, sizeof(int), cudaMemcpyHostToDevice);
-
-   dot<<< N / THREADS_PER_BLOCK, THREADS_PER_BLOCK >> >(dev_a, dev_b,    dev_c);
-
-   cudaMemcpy(c, dev_c, sizeof(int), cudaMemcpyDeviceToHost);
-
-   printf("%d ", *c);
-   printf("%d ", sumTest);
-
-   free(a);
-   free(b);
-   free(c);
-
-   cudaFree(a);
-   cudaFree(b);
-   cudaFree(c);
-
-
-   return 0;
-
- }
+__global__ void matrixAdd (int *a, int *b, int *c) {
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+    int index = col + row * N; 
+    
+    if (col < N && row < N) { 
+        c[index] = a[index] + b[index]; 
+    }
+}

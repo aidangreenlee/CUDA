@@ -11,8 +11,8 @@ void MatAdd(int iN, int jN, float *a, float *b, float *c){
 }
 
 int main(){
-    int iN = 30000;
-    int jN = 30000;
+    int iN = 10000;
+    int jN = 10000;
     float *x = new float[iN * jN];
     float *y = new float[iN * jN];
     float *z = new float[iN * jN];
