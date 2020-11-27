@@ -1,7 +1,7 @@
 #include <iostream>
 #include <math.h>
-#define N 10000
-#define BLOCK_DIM 16
+#define N 131072
+#define BLOCK_DIM 32
 
 __global__ void matAdd(float *a, float *b, float *c){
     int i = threadIdx.x + blockIdx.x * blockDim.x;
