@@ -1,11 +1,12 @@
 #include <iostream>
 #include <math.h>
-#define N 12111
+#define N 102
 #define BLOCK_DIM 32
 
 typedef struct{
     int rows;
     int cols;
+    int stride;
     float* mat;
     float* dev;
 }matrix;

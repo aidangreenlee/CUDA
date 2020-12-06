@@ -1,6 +1,6 @@
 #include <iostream>
 #include <math.h>
-#define N 131072
+#define N 4096
 #define BLOCK_DIM 32
 
 __global__ void matAdd(float *a, float *b, float *c){
